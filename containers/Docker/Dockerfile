@@ -21,18 +21,18 @@ RUN python3 -m pip install --find-links=. \
     black 
 
 ARG SSTver=14.1.0
+# SSTelemsVer defaults to SSTver; override when core and elements differ (e.g. --build-arg SSTelemsVer=15.1.0)
+ARG SSTelemsVer=${SSTver}
 
-RUN mkdir -p                      /opt/SST/${SSTver}/src
-COPY sstcore-${SSTver}.tar.gz     /opt/SST/${SSTver}/src
-COPY sstelements-${SSTver}.tar.gz /opt/SST/${SSTver}/src
-WORKDIR                           /opt/SST/${SSTver}/src 
+RUN mkdir -p                           /opt/SST/${SSTver}/src
+COPY sstcore-${SSTver}.tar.gz          /opt/SST/${SSTver}/src
+COPY sstelements-${SSTelemsVer}.tar.gz /opt/SST/${SSTver}/src
+WORKDIR                                /opt/SST/${SSTver}/src
 RUN tar --no-same-owner -xvzf sstcore-${SSTver}.tar.gz
 WORKDIR /opt/SST/${SSTver}/src/sst-core
 RUN ./configure --prefix=/opt/SST/${SSTver}; make -j4 all; make install
 
 WORKDIR /opt/SST/${SSTver}/src
-RUN tar --no-same-owner -xvzf sstelements-${SSTver}.tar.gz
+RUN tar --no-same-owner -xvzf sstelements-${SSTelemsVer}.tar.gz
 WORKDIR /opt/SST/${SSTver}/src/sst-elements
 RUN ./configure --prefix=/opt/SST/${SSTver}/elements -with-sst-core=/opt/SST/${SSTver}; make -j4 all; make install
-
-
