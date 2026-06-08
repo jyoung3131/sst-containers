@@ -1,4 +1,4 @@
-#!/bin/bash -e 
+#!/bin/bash
 #
 # Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -7,11 +7,34 @@
 # See LICENSE in the top level directory for licensing details
 #
 
-USER_CMDLINE=$1
+# Moved BASH flags down for better compatibility
+set -euo pipefail
 
-# User specified versions to bootstrap
-SST_VERSION="14.1.0"
-SST_EXP_VERSION="14_1_0"
+#Check for a user-specified version number
+USER_CMDLINE="${1:-}"
+
+print_help() {
+  echo "Usage: $0 <version_number|help>"
+  echo ""
+  echo "Bootstrap SST Core and SST Elements packages for container builds."
+  echo ""
+  echo "Arguments:"
+  echo "  <version_number>   SST version to bootstrap (e.g., 14.1.0, 15.1.2)"
+  echo "  help, -h, --help   Show this help message"
+  echo ""
+  echo "Supported versions:"
+  echo "  SST Core    : 11.0.0, 11.1.0, 12.0.1, 12.1.0, 13.0.0, 13.1.0, 14.0.0, 14.1.0, 15.1.2"
+  echo "  SST Elements: 11.1.0, 12.0.1, 12.1.0, 13.0.0, 13.1.0, 14.0.0, 14.1.0, 15.1.0"
+  echo ""
+  echo "Example:"
+  echo "  $0 14.1.0"
+}
+
+# Default versions (overriden by command line)
+SST_VERSION="15.1.2"
+SST_EXP_VERSION="15_1_2"
+SST_ELEMS_VERSION="15.1.0"
+SST_ELEMS_EXP_VERSION="15_1_0"
 
 # Global variables for SST packages and SHA
 SST_CORE=""
@@ -28,7 +51,7 @@ SSTCORE_13_0_0="sstcore-13.0.0.tar.gz"
 SSTCORE_13_1_0="sstcore-13.1.0.tar.gz"
 SSTCORE_14_0_0="sstcore-14.0.0.tar.gz"
 SSTCORE_14_1_0="sstcore-14.1.0.tar.gz"
-SSTELEMENTS_11_0_0="sstelements-11.0.0.tar.gz"
+SSTCORE_15_1_2="sstcore-15.1.2.tar.gz"
 SSTELEMENTS_11_1_0="sstelements-11.1.0.tar.gz"
 SSTELEMENTS_12_0_1="sstelements-12.0.1.tar.gz"
 SSTELEMENTS_12_1_0="sstelements-12.1.0.tar.gz"
@@ -36,6 +59,7 @@ SSTELEMENTS_13_0_0="sstelements-13.0.0.tar.gz"
 SSTELEMENTS_13_1_0="sstelements-13.1.0.tar.gz"
 SSTELEMENTS_14_0_0="sstelements-14.0.0.tar.gz"
 SSTELEMENTS_14_1_0="sstelements-14.1.0.tar.gz"
+SSTELEMENTS_15_1_0="sstelements-15.1.0.tar.gz"
 
 SSTCORE_11_0_0_URL="https://github.com/sstsimulator/sst-core/releases/download/v11.0.0_Final/sstcore-11.0.0.tar.gz"
 SSTCORE_11_1_0_URL="https://github.com/sstsimulator/sst-core/releases/download/v11.1.0_Final/sstcore-11.1.0.tar.gz"
@@ -45,6 +69,8 @@ SSTCORE_13_0_0_URL="https://github.com/sstsimulator/sst-core/releases/download/v
 SSTCORE_13_1_0_URL="https://github.com/sstsimulator/sst-core/releases/download/v13.1.0_Final/sstcore-13.1.0.tar.gz"
 SSTCORE_14_0_0_URL="https://github.com/sstsimulator/sst-core/releases/download/v14.0.0_Final/sstcore-14.0.0.tar.gz"
 SSTCORE_14_1_0_URL="https://github.com/sstsimulator/sst-core/releases/download/v14.1.0_Final/sstcore-14.1.0.tar.gz"
+SSTCORE_15_1_2_URL="https://github.com/sstsimulator/sst-core/releases/download/v15.1.2_Final/sstcore-15.1.2.tar.gz"
+
 SSTELEMENTS_11_0_0_URL="https://github.com/sstsimulator/sst-elements/releases/download/v11.0.0_Final/sstelements-11.0.0.tar.gz"
 SSTELEMENTS_11_1_0_URL="https://github.com/sstsimulator/sst-elements/releases/download/v11.1.0_Final/sstelements-11.1.0.tar.gz"
 SSTELEMENTS_12_0_1_URL="https://github.com/sstsimulator/sst-elements/releases/download/v12.0.1_Final/sstelements-12.0.1.tar.gz"
@@ -53,6 +79,7 @@ SSTELEMENTS_13_0_0_URL="https://github.com/sstsimulator/sst-elements/releases/do
 SSTELEMENTS_13_1_0_URL="https://github.com/sstsimulator/sst-elements/releases/download/v13.1.0_Final/sstelements-13.1.0.tar.gz"
 SSTELEMENTS_14_0_0_URL="https://github.com/sstsimulator/sst-elements/releases/download/v14.0.0_Final/sstelements-14.0.0.tar.gz"
 SSTELEMENTS_14_1_0_URL="https://github.com/sstsimulator/sst-elements/releases/download/v14.1.0_Final/sstelements-14.1.0.tar.gz"
+SSTELEMENTS_15_1_0_URL="https://github.com/sstsimulator/sst-elements/releases/download/v15.1.0_Final/sstelements-15.1.0.tar.gz"
 
 SSTCORE_11_0_0_SHA1="a1d0dd4f6b0c4216c35589179da0f677bbe5fdf3"
 SSTCORE_11_1_0_SHA1="9e2d6efcf94e395555de5ceb6a5c7c19f5684892"
@@ -62,6 +89,7 @@ SSTCORE_13_0_0_SHA1="eaa2b06981631232cd2c22f405a61aa3fb0f1a5c"
 SSTCORE_13_1_0_SHA1="89430e296f324b040be87200b28acd323f260121"
 SSTCORE_14_0_0_SHA1="3c3f51134cc92ac7d659543aefcd8d4fd89fea28"
 SSTCORE_14_1_0_SHA1="063edf04008622df11690448161bf3cb874eb835"
+SSTCORE_15_1_2_SHA1="b9515b2d448db6bf35b9c2aa3ab979ed91e72af8"
 SSTELEMENTS_11_0_0_SHA1="8b9e779a8ace79a2d5767692a65505c63d3c5cd1"
 SSTELEMENTS_11_1_0_SHA1="8f2050e907466f32d8e2f81f1622aab1db3011e0"
 SSTELEMENTS_12_0_1_SHA1="a3917fdae7bf1c89efa5b7252f2db1527117529c"
@@ -70,6 +98,7 @@ SSTELEMENTS_13_0_0_SHA1="1245fca5dbecd51a79e7ac330321324d86e4405e"
 SSTELEMENTS_13_1_0_SHA1="134dcc32ff117743d2a1cc494f0a2db0b729a082"
 SSTELEMENTS_14_0_0_SHA1="9206c915f873221398409c7216edeff58ccbd9cd"
 SSTELEMENTS_14_1_0_SHA1="c4db22ae04a2a1ff0b4dcef7814190fad641f399"
+SSTELEMENTS_15_1_0_SHA1="b09e6b96d64e74bc0e01b1d759c11f7ac1cdac88"
 
 GETCMD=""
 SHA1SUM=""
@@ -120,13 +149,6 @@ check_container_tools() {
 #expand to the correct variable format
 get_version_to_bootstrap(){
 
-
-	if [[ -z "$USER_CMDLINE" ]]; then
-	  echo "Usage: $0 <version_number>"
-	  echo "Example: $0 14.1.0"
-	  exit 1
-	fi
-	
 	#Assign the commandline to a variable
 	SST_VERSION=$USER_CMDLINE
 
@@ -139,6 +161,13 @@ get_version_to_bootstrap(){
 	#Create the expected "expanded" version number used for different checks
 	SST_EXP_VERSION="${SST_VERSION//./_}"
 	echo "Bootstrapping SST Version $SST_VERSION"
+
+	# Map core version to elements version when they differ
+	case "$SST_VERSION" in
+	  15.1.2) SST_ELEMS_VERSION="15.1.0" ;;
+	  *) SST_ELEMS_VERSION="$SST_VERSION" ;;
+	esac
+	SST_ELEMS_EXP_VERSION="${SST_ELEMS_VERSION//./_}"
 }
 
 download_packages(){
@@ -149,9 +178,9 @@ download_packages(){
   SST_CORE_URL_STR="SSTCORE_${SST_EXP_VERSION}_URL"
   SST_CORE_URL=${!SST_CORE_URL_STR}
 
-  SST_ELEMS_STR="SSTELEMENTS_${SST_EXP_VERSION}"
+  SST_ELEMS_STR="SSTELEMENTS_${SST_ELEMS_EXP_VERSION}"
   SST_ELEMS=${!SST_ELEMS_STR}
-  SST_ELEMS_URL_STR="SSTELEMENTS_${SST_EXP_VERSION}_URL"
+  SST_ELEMS_URL_STR="SSTELEMENTS_${SST_ELEMS_EXP_VERSION}_URL"
   SST_ELEMS_URL=${!SST_ELEMS_URL_STR}
 
   $GETCMD $SST_CORE $SST_CORE_URL >> /dev/null 2>&1
@@ -180,7 +209,7 @@ verify_packages() {
   #-- compare against the standard package
   SST_CORE_SHA1_REF_STR="SSTCORE_${SST_EXP_VERSION}_SHA1"
   SST_CORE_SHA1_REF=${!SST_CORE_SHA1_REF_STR}
-  SST_ELEMS_SHA1_REF_STR="SSTELEMENTS_${SST_EXP_VERSION}_SHA1"
+  SST_ELEMS_SHA1_REF_STR="SSTELEMENTS_${SST_ELEMS_EXP_VERSION}_SHA1"
   SST_ELEMS_SHA1_REF=${!SST_ELEMS_SHA1_REF_STR}
 
   if [ "$SST_CORE_SHA1" = "$SST_CORE_SHA1_REF" ]; then
@@ -203,6 +232,12 @@ setup_symlinks() {
   $MY_LN -fs $MY_PWD/$SST_CORE ./containers/singularity/$SST_CORE
   $MY_LN -fs $MY_PWD/$SST_ELEMS ./containers/singularity/$SST_ELEMS
 }
+
+#-- Handle help flag and no user input before anything else
+if [[ -z "$USER_CMDLINE" || "$USER_CMDLINE" == "help" || "$USER_CMDLINE" == "-h" || "$USER_CMDLINE" == "--help" ]]; then
+  print_help
+  exit 0
+fi
 
 #-- STAGE0: Check for user specification of version
 get_version_to_bootstrap
