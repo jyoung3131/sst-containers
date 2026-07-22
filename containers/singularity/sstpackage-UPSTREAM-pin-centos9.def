@@ -67,6 +67,8 @@ Include: dnf
                python3-pip \
                doxygen \
                automake \
+               libtool \
+               libtool-ltdl-devel \
                zlib-devel \
                valgrind \
 	       cmake \
